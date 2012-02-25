@@ -1,0 +1,11 @@
+GNU Lesser General Public License (LGPL) version 2
+
+This is a port of racket-5.1 version of syntax-parse which are 
+under,
+
+  Copyright (c) 2010-2011 PLT Scheme Inc.
+
+With changes by Stefan Israelsson Tampe in order to make it work under
+guile
+
+See "COPYING.LIB" for more information about the license.
