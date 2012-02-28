@@ -9,6 +9,7 @@
   #:use-module (ice-9 session)
 
   #:use-module (compat racket misc)
+  #:use-module (compat racket lambda)
   #:use-module (compat racket procedures)
   #:use-module (compat racket struct)
   #:use-module (compat racket struct-def)
@@ -26,6 +27,18 @@
             check-procedure
             check-procedure/more))
 
+
+(define-syntax λ
+  (syntax-rules ()
+    ((_ args code ...)
+     (rlambda args code ...))))
+
+(define old-gensym gensym)
+(define gensym
+  (case-lambda 
+    ((x) (old-gensym x))
+    ((stx x)
+     (datum->syntax stx (old-gensym x)))))
 
 #|
 #lang racket/base
@@ -79,11 +92,17 @@ v4 todo:
       (old-assoc k x)
       #f))
 
-(define-syntax making-a-method #f)
+(eval-when 
+ (compile load eval)
+ (define %f (lambda (x) (error "%f should not be evaluated"))))
+
+(define-syntax making-a-method %f)
 (define (make-this-parameters id)
-  (if (syntax-parameter-value #'making-a-method)
-      (list id)
-      null))
+  (aif (it) (syntax-local-value #'making-a-method)
+       (if (not (eq? it %f))
+           (list id)
+           null)
+       null))
 
 (define-rstruct contracted-function (proc ctc)
   #:property prop:procedure  0
@@ -216,33 +235,33 @@ v4 todo:
           ([(this-param ...) this-args]
            [([dom-ctc dom-x] ...) 
             (map (lambda (d)
-                   (list d (gensym "dom")))
+                   (list d (gensym #'val "dom")))
                  doms)]
            [([opt-dom-ctc opt-dom-x] ...)
             (map (lambda (d)
-                   (list d (gensym "opt-dom")))
+                   (list d (gensym #'val "opt-dom")))
                  opt-doms)]
            [(rest-ctc rest-x) 
-            (list dom-rest (gensym "rest"))]
+            (list dom-rest (gensym #'val "rest"))]
            [([req-kwd req-kwd-ctc req-kwd-x] ...)
             (map (lambda (d)
-                   (list (car d) (cadr d) (gensym "req-kwd")))
+                   (list (car d) (cadr d) (gensym #'val "req-kwd")))
                  req-kwds)]
            [([opt-kwd opt-kwd-ctc opt-kwd-x] ...)
             (map (lambda (d)
-                   (list (car d) (cadr d) (gensym "opt-kwds")))
+                   (list (car d) (cadr d) (gensym #'val "opt-kwds")))
                  opt-kwds)]
            [([rng-ctc rng-x] ...)
             (if rngs
                 (map (lambda (r)
-                       (list r (gensym "rng")))
+                       (list r (gensym #'val "rng")))
                      rngs)
                 null)])
 
         (with-syntax 
             ([(rng-checker-name ...)
               (if rngs
-                  (list (gensym "rng-checker"))
+                  (list (gensym #'val "rng-checker"))
                   null)]
 
              [(rng-checker ...)
@@ -439,12 +458,12 @@ v4 todo:
                            outer-stx-gen)))])
 
                 (with-syntax 
-                    ([basic-lambda-name (gensym "basic-lambda")]
+                    ([basic-lambda-name (gensym #'val "basic-lambda")]
                      [basic-lambda #'(λ basic-params pre ... basic-return)]
-                     [kwd-lambda-name (gensym "kwd-lambda")]
+                     [kwd-lambda-name (gensym #'val "kwd-lambda")]
                      [kwd-lambda #`(λ kwd-lam-params pre ... kwd-return)])
                   (with-syntax 
-                      ([basic-checker-name (gensym "basic-checker")]
+                      ([basic-checker-name (gensym #'val "basic-checker")]
 
                        [basic-checker
                         (if (null? req-keywords)
@@ -916,7 +935,7 @@ v4 todo:
 
 (define-syntax -> 
   (lambda (stx) 
-  #`(fluid-let-syntax ((making-a-method #f)) #,(->/proc/main stx))))
+    #`(fluid-let-syntax ((making-a-method #,#'%f)) #,(->/proc/main stx))))
 
 ;;
 ;; arrow opter
@@ -1313,7 +1332,7 @@ v4 todo:
 
 (define-syntax ->* 
   (lambda (stx) 
-    #`(fluid-let-syntax ((making-a-method #f)) #,(->*/proc/main stx))))
+    #`(fluid-let-syntax ((making-a-method #,#'%f)) #,(->*/proc/main stx))))
 
 
 
@@ -1571,7 +1590,7 @@ v4 todo:
                                                   body)))
                                              #'body)])))])
                      (fluid-let-syntax
-                      ((making-a-method #f)) 
+                      ((making-a-method #,#'%f)) 
                       (build-->d 
                        mtd? 
                        (list (λ (dom-params ...)
@@ -2123,8 +2142,8 @@ v4 todo:
                formals
                body) ...)
              (map (λ (x) (parse-out-case stx x)) (syntax->list #'(cases ...)))])
-         #`(fluid-let-synyax
-            ((making-a-method #f)) 
+         #`(fluid-let-syntax
+            ((making-a-method #,#'%f)) 
             (build-case-> 
              (list (list dom-proj ...) ...)
              (list rst-proj ...)

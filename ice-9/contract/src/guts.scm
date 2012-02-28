@@ -228,7 +228,7 @@
                            (list stx)
                            '()))]
                  [(_ margs (... ...))
-                  (with-syntax ([app (datum->syntax stx '%%app)])
+                  (with-syntax ([app #'%%app])
                     (syntax-property 
                      #'(app ctc/proc margs (... ...))
                      'racket/contract:contract 
@@ -274,7 +274,7 @@
                                        'racket/contract:positive-position 
                                        this-one))
                                (syntax->list #'(margs (... ...))))]
-                         [app (datum->syntax stx '%%app)])
+                         [app #'%%app])
                       (syntax-property 
                        #'(app ctc/proc margs (... ...))
                        'racket/contract:contract 

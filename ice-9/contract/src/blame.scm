@@ -106,7 +106,10 @@
          [positive-message (show/display (blame-positive b))]
          
          [contract-message 
-          (format #f "  contract: ~a" (show/write (blame-contract b)))]
+          (format #f "  contract: ~a" (show/write 
+                                       (blame-contract 
+                                        b)   
+                                        "            "))]
 
          [contract-message+at 
           (if (regexp-match "\n$" contract-message)
@@ -177,10 +180,17 @@
     (pretty-print v port #:display? #t)
     (get-output-string port)))
 
-(define (pretty-format/write v . l)
-  (let ([port (open-output-string)])
-    (pretty-print v port)
-    (get-output-string port)))
+(define pretty-format/write 
+  (case-lambda 
+    ((v)
+     (let ([port (open-output-string)])
+       (pretty-print v port)
+       (get-output-string port)))
+
+    ((v s)
+     (let ([port (open-output-string)])
+       (pretty-print v port #:per-line-prefix s)
+       (skip s (get-output-string port))))))
 
 (define show/display pretty-format/display)
 (define show/write   pretty-format/write)
@@ -193,3 +203,9 @@
 
 (define current-blame-format
   (make-parameter default-blame-format))
+
+(define (skip s l)
+  (let loop ((s (string->list s)) (l (string->list l)))
+    (if (pair? s)
+        (loop (cdr s) (cdr l))
+        (list->string l))))
