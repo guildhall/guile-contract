@@ -204,11 +204,12 @@
       [(_ header bodies ...)
        (with-syntax ([ctc (if (identifier? #'header)
                               #'header
-                              (car (syntax-e #'header)))])
+                              (stx-car #'header))])
+
          (with-syntax ([ctc/proc 
                         (datum->syntax 
                          #'ctc 
-                         (string->symbol 
+                         (string->symbol                          
                           (format #f "~a/proc" (syntax-e #'ctc))))])
            #'(begin
                (define ctc/proc
@@ -223,15 +224,15 @@
                   (syntax-property 
                    #'ctc/proc
                    'racket/contract:contract 
-                   (vector (gensym 'ctc) 
+                   (vector (gensym (symbol->string 'ctc)) 
                            (list stx)
                            '()))]
                  [(_ margs (... ...))
-                  (with-syntax ([app (datum->syntax stx '%app)])
+                  (with-syntax ([app (datum->syntax stx '%%app)])
                     (syntax-property 
                      #'(app ctc/proc margs (... ...))
                      'racket/contract:contract 
-                     (vector (gensym 'ctc) 
+                     (vector (gensym (symbol->string 'ctc))
                              (list (car (syntax-e stx)))
                              '())))]))))))])))
 
@@ -241,13 +242,13 @@
     [(_ header bodies ...)
      (with-syntax ([ctc (if (identifier? #'header)
                             #'header
-                            (car (syntax-e #'header)))])
+                            (stx-car #'header))])
+
        (with-syntax ([ctc/proc 
                       (datum->syntax
                        #'ctc
                        (string->symbol 
                         (format #f "~a/proc" (syntax-e #'ctc))))])
-                       
          #'(begin
              (define ctc/proc
                (let ()
@@ -261,11 +262,11 @@
                   (syntax-property 
                    #'ctc/proc
                    'racket/contract:contract 
-                   (vector (gensym 'ctc) 
+                   (vector (gensym (symbol->string 'ctc)) 
                            (list stx)
                            '()))]
                  [(_ margs (... ...))
-                  (let ([this-one (gensym 'ctc)])
+                  (let ([this-one (gensym (symbol->string 'ctc))])
                     (with-syntax 
                         ([(margs (... ...)) 
                           (map (λ (x) (syntax-property
@@ -273,7 +274,7 @@
                                        'racket/contract:positive-position 
                                        this-one))
                                (syntax->list #'(margs (... ...))))]
-                         [app (datum->syntax stx '%app)])
+                         [app (datum->syntax stx '%%app)])
                       (syntax-property 
                        #'(app ctc/proc margs (... ...))
                        'racket/contract:contract 
@@ -391,7 +392,7 @@
    #:first-order and-first-order
    #:stronger and-stronger?))
 
-(define (and/c . raw-fs)
+(define/subexpression-pos-prop (and/c . raw-fs)
   (let ([contracts (coerce-contracts 'and/c raw-fs)])
     (cond
       [(null? contracts) any/c]
@@ -412,6 +413,7 @@
 (define (any? x) #t)
 
 (define-rstruct any/c ()
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:projection get-any-projection
@@ -432,6 +434,7 @@
        val))))
 
 (define-rstruct none/c (name)
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:projection none-curried-proj

@@ -66,7 +66,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-rstruct contract-property 
-  [ name first-order projection stronger generator ])
+  [ name first-order projection stronger generator ]
+  #:omit-define-syntaxes)
 
 (define (contract-property-guard prop info)
   (unless (contract-property? prop)
@@ -108,7 +109,8 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-rstruct chaperone-contract-property [implementation])
+(define-rstruct chaperone-contract-property [implementation]
+  #:omit-define-syntaxes)
 
 (define (chaperone-contract-property-guard prop info)
   (unless (chaperone-contract-property? prop)
@@ -138,7 +140,8 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-rstruct flat-contract-property [implementation])
+(define-rstruct flat-contract-property [implementation]
+  #:omit-define-syntaxes)
 
 (define (flat-contract-property-guard prop info)
   (unless (flat-contract-property? prop)
@@ -254,6 +257,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-rstruct make-contract [ name first-order projection stronger ]
+  #:omit-define-syntaxes
   #:property prop:contract
   (build-contract-property
    #:name (lambda (c) (make-contract-name c))
@@ -263,6 +267,7 @@
    #:generator #f))
 
 (define-rstruct make-chaperone-contract [ name first-order projection stronger ]
+  #:omit-define-syntaxes
   #:property prop:chaperone-contract
   (build-chaperone-contract-property
    #:name (lambda (c) (make-chaperone-contract-name c))
@@ -272,6 +277,7 @@
    #:generator #f))
 
 (define-rstruct make-flat-contract [ name first-order projection stronger ]
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:name (lambda (c) (make-flat-contract-name c))

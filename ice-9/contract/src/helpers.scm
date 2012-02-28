@@ -137,7 +137,7 @@
                             (cdr (assoc 'column it))
                             0)
                      (rerror 'contract
-                             "malformed syntax loc has non-syntax source: ~e"
+                             "malformed syntax loc has non-syntax source: ~a"
                              stx))])
     (let ([location (cond [(and line col) (format #f "~a:~a" line col)]
                           [pos (format #f "~a" pos)]

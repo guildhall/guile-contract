@@ -160,13 +160,13 @@
          (n-init   (let loop ((i np) (j 0) (r '()))
                      (if (= j init-field-cnt)
                          (reverse r)
-                         (loop (+ i np) (+ j 1) 
+                         (loop (+ i 1) (+ j 1) 
                                (cons i r)))))
 
          (n-default (let loop ((i (+ np init-field-cnt)) (j 0) (r '()))
                      (if (= j auto-field-cnt)
                          (reverse r)
-                         (loop (+ i np) (+ j 1) 
+                         (loop (+ i 1) (+ j 1) 
                                (cons i r)))))
 
          (ref      (lambda (s n)
@@ -274,6 +274,7 @@
   (lambda (x)
     (syntax-parse x
       ((_ n:np (field ...)
+          (~or (~optional (~and #:omit-define-syntaxes o-m-s))) ...
           (~seq #:property pkey:expr pval:expr) ...)
        (let ((nm (syntax->datum #'n.name)))
          (with-syntax ((q   (format-id #'n.name "~a-fkns"   nm))
@@ -281,6 +282,11 @@
                        (ref (format-id #'n.name "~a-ref"    nm))
                        (set (format-id #'n.name "~a-set!"   nm))
                        (?  (format-id #'n.name "~a?" nm))
+                       (nm (if o-m-s 
+                               (datum->syntax 
+                                #'n-name
+                                (gensym "name"))
+                               #'n.name))
                        ((fn ...)
                         (map (lambda (x)
                                (format-id #'n.name "~a-~a"
@@ -294,7 +300,7 @@
                               '()))))
            #`(begin             
                (define-values 
-                 (n.name mk ? ref set)
+                 (nm mk ? ref set)
                  (make-struct-type 'n.name 
                                    n.parent
                                    (length '(field ...))

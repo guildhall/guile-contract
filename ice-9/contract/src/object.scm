@@ -60,6 +60,7 @@
                 #f "malformed object-contract clause" stx (car args))])])))
 
 (define-rstruct object-contract (methods method-ctcs fields field-ctcs)
+  #:omit-define-syntaxes
   #:property prop:contract
   (build-contract-property
    #:projection

@@ -132,7 +132,7 @@
      (raise-syntax-error 
       'flat-rec-contract "expected at least one body expression" stx)])))
 
-(define or/c
+(define/subexpression-pos-prop or/c
   (case-lambda 
     [() 
      (make-none/c '(or/c))]
@@ -471,7 +471,7 @@
 
 (define false/c #f)
 
-(define (string-len/c n)
+(define/final-prop (string-len/c n)
   (unless (number? n)
     (rerror 'string-len/c "expected a number as argument, got ~a" n))
   (flat-named-contract 
@@ -480,7 +480,7 @@
       (and (string? x)
            (< (string-length x) n)))))
 
-(define (symbols . ss)
+(define/final-prop (symbols . ss)
   (unless (>= (length ss) 1)
     (rerror 'symbols "expected at least one argument"))
   (unless (andmap symbol? ss)
@@ -495,7 +495,7 @@
           (null? x) (keyword? x) (number? x)
           (void? x) (eq? x undefined)))))
 
-(define (one-of/c . elems)
+(define/final-prop (one-of/c . elems)
   (unless (andmap atomic-value? elems)
     (rerror 'one-of/c 
             (string-append "expected chars, symbols, booleans, null, keywords, "
@@ -522,6 +522,7 @@
 
 
 (define-rstruct one-of/c (elems)
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:name
@@ -570,6 +571,7 @@
                 (printable? (unbox x))))))))
 
 (define-rstruct between/c (low high)
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:name
@@ -607,15 +609,15 @@
          (unless (real? x)
            (rerror 'sym "expected a real number, got ~a" x)))])))
 
-(define (=/c x) 
+(define/final-prop (=/c x) 
   (check-unary-between/c '=/c x)
   (make-between/c x x))
 
-(define (<=/c x) 
+(define/final-prop (<=/c x) 
   (check-unary-between/c '<=/c x)
   (make-between/c -inf.0 x))
 
-(define (>=/c x)
+(define/final-prop (>=/c x)
   (check-unary-between/c '>=/c x)
   (make-between/c x +inf.0))
 
@@ -629,7 +631,8 @@
      'between/c 
      "expected a real number as second argument, got ~a, other arg ~a" y x)))
 
-(define (between/c x y)
+
+(define/final-prop (between/c x y)
   (check-between/c x y)
   (make-between/c x y))
 
@@ -644,6 +647,8 @@
 ;;
 ;; note that the checkers are used by both optimized and normal contracts.
 ;;
+
+
 (define/opter (between/c opt/i opt/info stx)
   (syntax-case stx (between/c)
     [(between/c low high) 
@@ -781,7 +786,8 @@
           (exact? x)
           (>= x 0)))))
 
-(define (integer-in start end)
+
+(define/final-prop (integer-in start end)
   (unless (and (integer? start)
                (exact? start)
                (integer? end)
@@ -797,7 +803,8 @@
           (exact? x)
           (<= start x end)))))
 
-(define (real-in start end)
+
+(define/final-prop (real-in start end)
   (unless (and (real? start)
                (real? end))
     (rerror 
@@ -805,12 +812,15 @@
      "expected two real numbers as arguments, got ~a and ~a" start end))
   (between/c start end))
 
-(define (not/c f)
+
+
+(define/final-prop (not/c f)
   (let* ([ctc (coerce-flat-contract 'not/c f)]
          [pred (flat-contract-predicate ctc)])
     (build-flat-contract
      (build-compound-type-name 'not/c ctc)
      (λ (x) (not (pred x))))))
+
 
 (define-syntax *-listof 
   (lambda (stx)
@@ -855,13 +865,13 @@
               #:projection (ho-check (λ (p v) (map p v))))]))))])))
 
 (define listof-func (*-listof list? list listof))
-(define  (listof x) (listof-func x))
+(define/subexpression-pos-prop  (listof x) (listof-func x))
 
 (define (non-empty-list? x) (and (pair? x) (list? (cdr x))))
 (define non-empty-listof-func 
   (*-listof non-empty-list? non-empty-list non-empty-listof))
 
-(define (non-empty-listof a) (non-empty-listof-func a))
+(define/subexpression-pos-prop (non-empty-listof a) (non-empty-listof-func a))
 
 ;;
 ;; cons/c opter
@@ -979,7 +989,7 @@
            #:first-order fo-check
            #:projection (ho-check (λ (v a d) (cons a d))))]))))
 
-(define (cons/c a b) (cons/c-main-function a b))
+(define/subexpression-pos-prop (cons/c a b) (cons/c-main-function a b))
 
 ;;
 ;; cons/c opter
@@ -1026,7 +1036,7 @@
   (syntax-case stx (cons/c)
     [(_ hdp tlp) (opt/cons-ctc #'hdp #'tlp)]))
 
-(define (list/c . args)
+(define/subexpression-pos-prop (list/c . args)
   (let* ([args (coerce-contracts 'list/c args)])
     (if (andmap flat-contract? args)
       (flat-list/c args)
@@ -1104,7 +1114,7 @@
                 args x)))))))
                   
 
-(define (syntax/c ctc-in)
+(define/subexpression-pos-prop (syntax/c ctc-in)
   (let ([ctc (coerce-contract 'syntax/c ctc-in)])
     (build-flat-contract
      (build-compound-type-name 'syntax/c ctc)
@@ -1113,7 +1123,7 @@
           (and (syntax? val)
                (pred (syntax-e val))))))))
 
-(define promise/c
+(define/subexpression-pos-prop promise/c
   (λ (ctc-in)
      (let* ([ctc (coerce-contract 'promise/c ctc-in)]
             [ctc-proc (contract-projection ctc)])
@@ -1132,10 +1142,11 @@
                 (delay (p-app (force val))))))
         #:first-order promise?))))
 
-(define (parameter/c x)
+(define/subexpression-pos-prop (parameter/c x)
   (make-parameter/c (coerce-contract 'parameter/c x)))
 
 (define-rstruct parameter/c (ctc)
+  #:omit-define-syntaxes
   #:property prop:contract
   (build-contract-property
    #:projection

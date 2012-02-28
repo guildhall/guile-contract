@@ -46,10 +46,10 @@ improve method arity mismatch contract violation error messages?
        (apply-contract c v pos neg name loc (current-contract-region)))]
     [(_ c v pos neg)
      (with-syntax ([name (syntax-local-infer-name stx)])
-      (syntax
-       (apply-contract c v pos neg 'name
-                       (build-source-location #f)
-                       (current-contract-region))))]
+       (syntax
+        (apply-contract c v pos neg 'name
+                        (build-source-location #f)
+                        (current-contract-region))))]
     [(_ c v pos neg src)
      (raise-syntax-error 
       'contract

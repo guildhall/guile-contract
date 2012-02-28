@@ -95,12 +95,13 @@
 (struct-out exn:fail:contract:blame)
 
 (define (raise-blame-error b x fmt . args)
-  (error (apply format #f fmt args)))
+  (error ((current-blame-format) b x (apply format fmt args)))
+  #;(error (apply format #f fmt args)))
 
 (define (default-blame-format b x custom-message)
   (let* ([source-message 
           (regexp-replace 
-           ": *$" (blame-source b) "")]
+           ": *$" (aif (it) (blame-source b) it "") "")]
 
          [positive-message (show/display (blame-positive b))]
          
@@ -123,14 +124,15 @@
          [value-message (if (blame-value b)
                             (format #f " on ~a" (show/display (blame-value b)))
                             "")])
-    ;; use (regexp-match #rx"\n" ...) to find out if show/display decided that this
-    ;; is a multiple-line message and adjust surrounding formatting accordingly
+    ;; use (regexp-match #rx"\n" ...) to find out if show/display decided that 
+    ;; this is a multiple-line message and adjust surrounding formatting 
+    ;; accordingly
 
     (cond
       [(blame-original? b)
        (string-append
         (format #f "self-contract violation: ~a\n" custom-message)
-        (format #f "  contract~a from ~a~a blaming ~a~a" 
+        (format #f "  contract~a  from ~a~a blaming ~a~a" 
                 value-message 
                 positive-message
                 (if (regexp-match "\n" positive-message)
@@ -148,10 +150,10 @@
          (define user-message
            (if (equal? (blame-positive b) (blame-user b))
                ""
-               (format #f " via ~a" (show/display (blame-user b)))))
+               (format #f "  via ~a" (show/display (blame-user b)))))
          (string-append
           (format #f "contract violation: ~a\n" custom-message)
-          (format #f "  contract~a from ~a~a~a blaming ~a~a" 
+          (format #f "  contract~a  from ~a~a~a blaming ~a~a" 
                   value-message
                   negative-message 
                   user-message

@@ -141,6 +141,7 @@
 (define-rstruct base-hash/c (dom rng immutable))
 
 (define-rstruct (flat-hash/c base-hash/c) ()
+  #:omit-define-syntaxes
   #:property prop:flat-contract
   (build-flat-contract-property
    #:name hash/c-name
@@ -196,6 +197,7 @@
                  impersonator-prop:contracted ctc))))))))
 
 (define-rstruct (chaperone-hash/c base-hash/c) ()
+  #:omit-define-syntaxes
   #:property prop:chaperone-contract
   (build-chaperone-contract-property
    #:name hash/c-name
@@ -203,6 +205,7 @@
    #:projection (ho-projection chaperone-hash)))
 
 (define-rstruct (impersonator-hash/c base-hash/c) ()
+  #:omit-define-syntaxes
   #:property prop:contract
   (build-contract-property
    #:name hash/c-name

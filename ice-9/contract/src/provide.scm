@@ -39,7 +39,6 @@
   (todo identifier-prune-to-source-module)
   (todo hash-update!)
   (todo syntax-local-lift-module-end-declaration)
-  (todo quote-module-path)
 
   (define syntax-local-introduce    (lambda (x) x))
   (define syntax-local-lift-context (lambda (x) x)))

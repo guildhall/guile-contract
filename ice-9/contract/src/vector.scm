@@ -170,7 +170,7 @@
       [else
        (make-impersonator-vectorof ctc immutable)])))
 
-(define (vector-immutableof c)
+(define/subexpression-pos-prop (vector-immutableof c)
   (vectorof c #:immutable #t))
 
 (define-rstruct base-vector/c (elems immutable))
@@ -313,5 +313,5 @@
       [else
        (make-impersonator-vector/c ctcs immutable)])))
 
-(define (vector-immutable/c . args)
+(define/subexpression-pos-prop (vector-immutable/c . args)
   (apply vector/c args #:immutable #t))
