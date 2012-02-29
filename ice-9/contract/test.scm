@@ -30,3 +30,9 @@
                       (-> string? string? string? string?))
                 1
                 'positive 'negative))
+(define a/c (or/c (-> number? number?)
+                  (-> string? string? string?)))
+
+(define f (contract a/c (lambda (x) "a") 'positive 'negative))
+(test (f 'a))
+(test (f  1))
