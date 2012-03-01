@@ -155,7 +155,7 @@
                     [else
                      (loop (cons arg ho-contracts) 
                            flat-contracts (cdr args))]))]))])
-         (let ([pred 
+         (let* ([pred 
                 (cond
                   [(null? flat-contracts) not]
                   [else
@@ -178,7 +178,7 @@
                    pred flat-contracts (car ho-contracts)))]
              [else
               (if (andmap chaperone-contract? ho-contracts)
-                  (make-chaperone-multi-or/c 
+                  (make-chaperone-multi-or/c
                    flat-contracts ho-contracts)
                   (make-impersonator-multi-or/c 
                    flat-contracts ho-contracts))]))))]))
@@ -235,7 +235,7 @@
 
 (define (multi-or/c-proj ctc)
   (let* ([ho-contracts (multi-or/c-ho-ctcs ctc)]
-         [c-procs (map (λ (x) (contract-projection x)) ho-contracts)]
+         [c-procs      (map (λ (x) (contract-projection x)) ho-contracts)]
          [first-order-checks 
           (map (λ (x) (contract-first-order x)) ho-contracts)]
 
@@ -249,9 +249,9 @@
            [(ormap (λ (pred) (pred val)) predicates)
             val]
            [else
-            (let loop ([checks first-order-checks]
-                       [procs partial-contracts]
-                       [contracts ho-contracts]
+            (let loop ([checks         first-order-checks]
+                       [procs          partial-contracts]
+                       [contracts      ho-contracts]
                        [candidate-proc #f]
                        [candidate-contract #f])
               (cond
@@ -294,8 +294,8 @@
   (let ([flats (map flat-contract-predicate (multi-or/c-flat-ctcs ctc))]
         [hos (map (λ (x) (contract-first-order x)) (multi-or/c-ho-ctcs ctc))])
     (λ (x)
-      (or (ormap (λ (f) (f x)) hos)
-          (ormap (λ (f) (f x)) flats)))))
+       (or (ormap (λ (f) (f x)) hos)
+           (ormap (λ (f) (f x)) flats)))))
 
 (define (multi-or/c-stronger? this that)
   (and (multi-or/c? that)

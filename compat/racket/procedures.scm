@@ -3,6 +3,8 @@
   #:use-module (ice-9 match)
   #:use-module (ice-9 session)
   #:use-module (compat racket struct)
+  #:use-module (compat racket struct-def)
+  #:use-module (compat racket misc)
   #:export (impersonate-procedure
             chaperone-procedure
             impersonate-struct
@@ -14,7 +16,10 @@
             impersonate-vector
             chaperone-vector
             
-            make-derived-parameter))
+            make-derived-parameter
+            procedure-rename
+            
+            chaperone-of?))
 
 (define old-assoc assoc)
 (define (assoc k x)
@@ -79,12 +84,18 @@
            (v-k-w     (map keyword->symbol keys))
            (v         (cdr (assoc 'required argdata)))
            (v-w       (cdr (assoc 'required argdata-w)))
+           (name      (procedure-name proc))
+           (f         (lambda (lam)
+                        (if name
+                            `(let () (define ,name ,lam) ,name)
+                            lem)))
            (to-keys   (lambda (vs)
                         (map (lambda (k v) (list k v)) keys vs))))
+      
       (let ((res
              ((compile
-              `(lambda (proc wrapper-proc to-keys)
-                 (lambda* (,@v-w ,@(if (null? keys-w)
+              (f `(lambda (proc wrapper-proc to-keys)
+                    (lambda* (,@v ,@(if (null? keys-w)
                                        '()
                                        `(#:key ,@(map (lambda (k) 
                                                         `(k ,novalue))
@@ -92,7 +103,7 @@
                     (call-with-values
                         (lambda () 
                           (wrapper-proc 
-                           ,@v-w
+                           ,@v
                            ,@(let loop ((k keys-w) (v v-k-w) (r '()))
                                (if (pair? k)
                                    (loop (cdr k) (cdr v)
@@ -114,7 +125,7 @@
                                (call-with-values
                                    (lambda () 
                                      (apply proc ,@v (to-keys ks)))
-                                 f)))))))
+                                 f))))))))
               #:env env)
               proc wrapper-proc to-keys)))
         (let loop ((props props))
@@ -123,6 +134,8 @@
              ((struct-type-property-attach k) res v '())
              (loop l))
             (_ #f)))
+        (aif (name) (procedure-name proc)
+             (procedure-rename res name))
         res))))
             
             
@@ -131,10 +144,28 @@
          
 
 ;;TODO implement this
-(define chaperone-procedure impersonate-procedure)
+(define (chaperone-procedure proc . l)
+  (let ((res (apply impersonate-procedure proc  l)))
+    ((struct-type-property-attach prop:chaperone) res proc '())
+    res))
+
+(define (chaperone-of? f1 f2)
+  (aif (chap) (prop:chaperone? f2)
+       (if (equal? f1 chap)
+           #t
+           (chaperone-of? f1 chap))
+       (equal? f1 f2)))
 
 
 (define (make-derived-parameter p g w)
   (case-lambda
     (()  (w (p)))
     ((x) (p (g x)))))
+
+(define (procedure-rename f name)
+  (aif (it) (assoc 'name (procedure-properties f))
+       (set-cdr it name)
+       (set-procedure-properties!
+        f (cons (cons 'name name) (aif (it2) it it2 '()))))
+  f)
+                             

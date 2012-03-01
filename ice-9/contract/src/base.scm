@@ -4,6 +4,7 @@
   #:use-module (ice-9 contract src arrow)
 
   #:use-module (compat racket misc)
+  #:use-module (compat racket procedures)
   #:use-module (compat racket struct)
 
   #:export (contract
@@ -77,13 +78,11 @@ improve method arity mismatch contract violation error messages?
                ;;   - remove the require of arrow.rkt above
                ;;   - change (struct-out contracted-function) 
                ;;     in arrow.rkt to make-contracted-function
-               (error "renaming of function issue")
-               #;(make-contracted-function 
+               (make-contracted-function 
                 (procedure-rename (contracted-function-proc new-val) vs-name)
                 (contracted-function-ctc new-val))]
               [else
-               (error "renaming of function issue")
-               #;(procedure-rename new-val vs-name)]))
+               (procedure-rename new-val vs-name)]))
           new-val))))
 
 (define-syntax recursive-contract 

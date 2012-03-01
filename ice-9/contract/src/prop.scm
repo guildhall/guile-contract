@@ -1,5 +1,6 @@
 (define-module (ice-9 contract src prop)
   #:use-module (ice-9 contract src blame)
+  #:use-module (compat racket procedures)
   #:use-module (compat racket struct-def)
   #:use-module (compat racket struct)
   #:use-module (compat racket misc)
@@ -212,9 +213,6 @@
                   'anonymous-flat-contract
                   flat-projection-wrapper))
 
-(define chaperone-of? equal?) ;stis, mutability should also be the same!
-                              ; the question is if racket equal? is different
-                              ; from guile's
 
 (define (chaperone-projection-wrapper f)
   (λ (c)
@@ -223,7 +221,7 @@
         (let ([p (proj b)])
           (λ (v)
             (let ([v* (p v)])
-              (unless (chaperone-of? v* v)
+              #;(unless (chaperone-of? v* v)
                 (rerror 'prop:chaperone-contract 
                         (format #f "expected a chaperone of ~a, got ~a" v v*)))
               v*)))))))

@@ -202,14 +202,16 @@ v4 todo:
 
 (define (matches-arity-exactly? val contract-arity 
                                 contract-req-kwds contract-opt-kwds)
-  (when (null? contract-req-kwds)
+  (when (not (null? contract-req-kwds))
     (error "guile does not support required keywords"))
   (and (equal? (procedure-minimum-arity val) contract-arity)
        (let ((va (sort 
-                  (map car (cdr (assoc 'keyword
-                                       (procedure-arguments 
-                                        val))))
-                  keyword<?)))
+                  (map car (cdr (aif (it) (assoc 'keyword
+                                                 (procedure-arguments 
+                                                  val))
+                                     it (list 1))))
+                       
+                  keyword<?)))         
          (equal? va contract-opt-kwds))))
 
 (define (create-chaperone blame val pre post this-args doms opt-doms 
@@ -862,7 +864,7 @@ v4 todo:
                         #f))]))))]))
 
 (define (maybe-a-method/name stx)
-  (if (syntax-parameter-value #'making-a-method)
+  (if (syntax-parameter-value #'making-a-method %f) 
       (syntax-property stx 'method-arity-error #t)
       stx))
 
@@ -903,7 +905,7 @@ v4 todo:
                                         kwd-names ... rng-names ...)
                          (lambda (val)
                            (chk val #,(and (syntax-parameter-value 
-                                            #'making-a-method) #t))
+                                            #'making-a-method %f) #t))
                            (wrapper
                             val
                             #,(create-chaperone 
@@ -1311,7 +1313,7 @@ v4 todo:
                         rng-proj ...)
                       (λ (f)
                         (chk f #,(and (syntax-parameter-value 
-                                       #'making-a-method) 
+                                       #'making-a-method %f)
                                       #t))
                         (wrapper 
                          f
@@ -1517,7 +1519,7 @@ v4 todo:
               [(this-parameter ...)
                (make-this-parameters 
                 (if (syntax? (syntax-parameter-value 
-                              #'making-a-method))
+                              #'making-a-method %f))
                     (car (generate-temporaries '(this)))
                     (datum->syntax stx 'this)))])
            (with-syntax 
@@ -1541,7 +1543,7 @@ v4 todo:
                      [x (raise-syntax-error 
                          #f "expected binding pair or any" stx #'x)])]
 
-                  [mtd? (and (syntax-parameter-value #'making-a-method) #t)])
+                  [mtd? (and (syntax-parameter-value #'making-a-method %f) #t)])
                (let ([rng-underscores? 
                       (let ([is-underscore?
                              (λ (x) 
@@ -2161,7 +2163,8 @@ v4 todo:
                                         #'((rng-proj-x ...) ...)))))
                 (λ (f)
                    (chk f 
-                        #,(and (syntax-parameter-value #'making-a-method) #t))
+                        #,(and (syntax-parameter-value #'making-a-method %f) 
+                               #t))
                    (let ([checker
                           (make-keyword-procedure
                            (λ (kwds kwd-args . args)
@@ -2422,7 +2425,8 @@ v4 todo:
   (or (and (procedure? val)
            (procedure-arity-includes?/optionals 
             val 
-            (if mtd? (+ dom-length 1) dom-length) optionals)
+            (if mtd? (+ dom-length 1) dom-length)
+            optionals)
            (keywords-match mandatory-kwds optional-keywords val))
       (and blame
            (raise-blame-error
