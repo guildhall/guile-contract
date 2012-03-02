@@ -176,6 +176,10 @@
         (aif (name) (procedure-name proc)
              (procedure-rename res name))
 
+        (let ((arity (procedure-minimum-arity proc)))
+          (set-procedure-minimum-arity!
+           res (car arity) (cadr arity) (caddr arity)))
+        
         (set-procedure-property!
          res 'arglist argdata)
         
