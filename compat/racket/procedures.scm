@@ -72,6 +72,48 @@
                   (cons (car ii) (loop (cdr ii))))
               '())))))
          
+(define (match-wrap-res proc n)
+  (case-lambda
+    (() 
+     (proc))
+    
+    ((x . l)
+     (if (procedure? x)
+         (if (eq? (length l) n)
+             (call-with-values
+                 (lambda () (apply proc l))
+               x)
+             (apply proc x l))
+         (apply proc x l)))))
+
+
+
+(define (to-keys x ks)
+  (let loop ((ks ks) (x x) (r '()))
+    (match x
+      (((? keyword? k) v . l)
+       (loop l (cdr x) `(,k ,(car x) ,@r)))
+      ((               v . l)
+       (loop l (cdr x) `(,v          ,@r)))
+      (()
+       r))))
+
+(define (match-wrap-res-keys proc n)
+  (lambda (x)
+    (case-lambda
+      ((ks)
+       (apply proc (to-keys x ks)))
+      ((f ks . l)
+       (if (procedure? f)
+           (if (eq? (length l) n)
+               (call-with-values
+                   (lambda () 
+                     (apply proc (append l (to-keys x ks))))
+                 f)
+               (apply proc ks (append l (to-keys x f))))
+           (apply proc ks (append l (to-keys x f))))))))
+
+        
 
 ;Todo allow for optional varibales
 (define (impersonate-procedure proc wrapper-proc . props)
@@ -81,63 +123,64 @@
            (keys      (cdr (assoc 'keyword argdata)))
            (keys-w    (cdr (assoc 'keyword argdata-w)))
            (keys-w    (put-proc-first keys keys-w))
+           (rest      (assoc 'rest argdata))
+           (rest-w    (assoc 'rest argdata-w))
+           (opt       (assoc 'optional argdata))
+           (opt-w     (assoc 'optional argdata-w))
            (v-k-w     (map keyword->symbol keys))
            (v         (cdr (assoc 'required argdata)))
            (v-w       (cdr (assoc 'required argdata-w)))
            (name      (procedure-name proc))
-           (f         (lambda (lam)
-                        (if name
-                            `(let () (define ,name ,lam) ,name)
-                            lem)))
-           (to-keys   (lambda (vs)
-                        (map (lambda (k v) (list k v)) keys vs))))
-      
+
+           (match-wrap
+            (if (null? keys)
+                (match-wrap-res proc (length v))
+                (match-wrap-res-keys proc (length v))))
+
+           (arity-error 
+            (lambda () 
+              (error 
+               (string-append "wrong arity in the construction of "
+                              "personate/chaperone - procedure")))))
+
+      (let loop ((v (append v opt)) (v-w (append v-w opt)))
+        (if (pair? v)
+            (if (pair? v-w)
+                (loop (cdr v) (cdr v-w))
+                (if (not rest-w)
+                    (arity-error)))
+            (if rest
+                (if (not rest-w)
+                    (arity-error)))))
+                    
+                    
       (let ((res
-             ((compile
-              (f `(lambda (proc wrapper-proc to-keys)
-                    (lambda* (,@v ,@(if (null? keys-w)
-                                       '()
-                                       `(#:key ,@(map (lambda (k) 
-                                                        `(k ,novalue))
-                                                      v-k-w))))
-                    (call-with-values
-                        (lambda () 
-                          (wrapper-proc 
-                           ,@v
-                           ,@(let loop ((k keys-w) (v v-k-w) (r '()))
-                               (if (pair? k)
-                                   (loop (cdr k) (cdr v)
-                                         `(,(car k) ,(car v) ,@r))
-                                   r))))
-                      ,(if (null? keys)
-                           `(case-lambda
-                              ((,@v) 
-                               (proc ,@v))
-                              ((f ,@v)
-                               (call-with-values
-                                   (lambda () (proc ,@v))
-                                 f)))
-                                 
-                           `(case-lambda
-                              ((ks ,@v) 
-                               (apply proc ,@v (to-keys ks)))
-                              ((f ks ,@v)
-                               (call-with-values
-                                   (lambda () 
-                                     (apply proc ,@v (to-keys ks)))
-                                 f))))))))
-              #:env env)
-              proc wrapper-proc to-keys)))
+             (if (null? keys)
+                 (lambda x
+                   (call-with-values
+                       (lambda () (apply wrapper-proc x))
+                     match-wrap))
+                     
+                 (lambda x
+                   (call-with-values
+                       (lambda () (apply wrapper-proc x))
+                     (match-wrap x))))))
+
         (let loop ((props props))
           (match props
             ((k v . l)
              ((struct-type-property-attach k) res v '())
              (loop l))
             (_ #f)))
+
         (aif (name) (procedure-name proc)
              (procedure-rename res name))
+
+        (set-procedure-property!
+         res 'arglist argdata)
+        
         res))))
-            
+        
             
         
             
@@ -164,7 +207,7 @@
 
 (define (procedure-rename f name)
   (aif (it) (assoc 'name (procedure-properties f))
-       (set-cdr it name)
+       (set-cdr! it name)
        (set-procedure-properties!
         f (cons (cons 'name name) (aif (it2) it it2 '()))))
   f)
