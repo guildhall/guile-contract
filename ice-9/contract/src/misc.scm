@@ -1039,8 +1039,8 @@
 (define/subexpression-pos-prop (list/c . args)
   (let* ([args (coerce-contracts 'list/c args)])
     (if (andmap flat-contract? args)
-      (flat-list/c args)
-      (higher-order-list/c args))))
+        (make-flat-list/c args)
+        (higher-order-list/c args))))
 
 (define-rstruct flat-list/c [args]
   #:property prop:flat-contract

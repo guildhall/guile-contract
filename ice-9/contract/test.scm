@@ -70,3 +70,4 @@
 (test (contract (cons/c number? null?)    '(1) 'a 'b))
 (test (contract (cons/c number? null?)    '(a) 'a 'b))
 (test (contract (list/c number? symbol?)  '(1 a) 'a 'b))
+(test (contract (list/c number? symbol?)  '(1 1) 'a 'b))
