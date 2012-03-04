@@ -463,7 +463,7 @@ v4 todo:
                     ([basic-lambda-name (gensym #'val "basic-lambda")]
                      [basic-lambda #'(λ basic-params pre ... basic-return)]
                      [kwd-lambda-name (gensym #'val "kwd-lambda")]
-                     [kwd-lambda #`(λ kwd-lam-params pre ... kwd-return)])
+                     [kwd-lambda #`(rlambda kwd-lam-params pre ... kwd-return)])
                   (with-syntax 
                       ([basic-checker-name (gensym #'val "basic-checker")]
 
@@ -560,7 +560,7 @@ v4 todo:
                        #`(let-values ([(rng-checker-name ...) 
                                        (values rng-checker ...)])
                            (let ([basic-lambda-name basic-lambda]
-                                 [kwd-lambda-name kwd-lambda])
+                                 [kwd-lambda-name   kwd-lambda])
                              (if (matches-arity-exactly? 
                                   val contract-arity null (list 'opt-kwd ...))
                                  kwd-lambda-name
@@ -712,6 +712,8 @@ v4 todo:
                   doms/c-or-p optional-doms/c-or-p doms-rest/c-or-p-or-f 
                   mandatory-kwds/c-or-p mandatory-kwds optional-kwds/c-or-p 
                   optional-kwds rngs/c-or-p rng-any? func)
+  (when (not (null? mandatory-kwds/c-or-p))
+    (error "guile does not support mandatory keywords"))
   (let ([cc (λ (c-or-p) (coerce-contract name c-or-p))])
     (let ([doms/c     (map cc doms/c-or-p)]
           [opt-doms/c (map cc optional-doms/c-or-p)]
@@ -2385,19 +2387,21 @@ v4 todo:
       [(arity-at-least? arity)
        (<= (arity-at-least-value arity) dom-length)]
       [else
-       (let ([min-at-least (let loop ([ars arity]
-                                      [acc #f])
-                             (cond
-                               [(null? ars) acc]
-                               [else (let ([ar (car ars)])
-                                       (cond
-                                         [(arity-at-least? ar)
-                                          (if (and acc
-                                                   (< acc (arity-at-least-value ar)))
-                                              (loop (cdr ars) acc)
-                                              (loop (cdr ars) (arity-at-least-value ar)))]
-                                         [(number? ar)
-                                          (loop (cdr ars) acc)]))]))])
+       (let ([min-at-least 
+              (let loop ([ars arity]
+                         [acc #f])
+                (cond
+                 [(null? ars) acc]
+                 [else (let ([ar (car ars)])
+                         (cond
+                          [(arity-at-least? ar)
+                           (if (and acc
+                                    (< acc (arity-at-least-value ar)))
+                               (loop (cdr ars) acc)
+                               (loop (cdr ars) (arity-at-least-value ar)))]
+                          [(number? ar)
+                           (loop (cdr ars) acc)]))]))])
+
          (and min-at-least
               (begin
                 (let loop ([counts (sort (filter number? arity) >=)])

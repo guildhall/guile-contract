@@ -7,7 +7,7 @@
 (define (keyw->sym-stx k)
   (datum->syntax 
    k (keyword->symbol
-      (syntax->daym k))))
+      (syntax->datum k))))
 
 (define-splicing-syntax-class kwt
   (pattern (~seq key:keyword (i:id kv))

@@ -71,3 +71,66 @@
 (test (contract (cons/c number? null?)    '(a) 'a 'b))
 (test (contract (list/c number? symbol?)  '(1 a) 'a 'b))
 (test (contract (list/c number? symbol?)  '(1 1) 'a 'b))
+(test (contract (syntax/c 'a) #'a 'a 'b))
+(test (contract (syntax/c 'a)  'a 'a 'b))
+(test (contract (flat-rec-contract 
+                 sexp
+                 (cons/c sexp sexp)
+                 number?
+                 null?
+                 symbol?)
+
+                '(let ((a 1)) a) 
+
+                'a 'b))
+
+(test (contract (flat-rec-contract 
+                 sexp
+                 (cons/c sexp sexp)
+                 number?
+                 null?
+                 symbol?)
+
+                '(let ((a 1)) "a") 
+
+                'a 'b))
+
+(define flat
+  (flat-murec-contract ((plus  (cons/c (symbols '+) minus))
+                              (minus (cons/c (symbols '-) (or/c plus null?))))
+      (list/c plus minus)))
+
+(test (contract flat (list '(+ - + -) '(-)) 'a 'b))
+(test (contract flat (list '(+ - + -) '(- +)) 'a 'b))
+
+(define f (contract (-> string? any) (lambda (x) (values 1 2)) 'a 'b))
+(test (f "a"))
+
+(define f (contract (-> string? (values number? number?))
+                    (lambda (x) (values 1 2)) 'a 'b))
+
+(test (f "a"))
+(define f (contract (-> string? (values number? number?))
+                    (lambda (x) (values 1 2 3)) 'a 'b))
+
+(test (f "a"))
+
+
+;; these demand some kind of object like features
+;; vector/c
+;; struct/c
+;; parameter/c
+;; hash/c    not implemented
+;; promice/c not implemented
+
+
+(define f/c (->* (number? number?) (number? #:z number?) any))
+
+(define f (contract f/c (lambda* (x q #:optional (y 0) #:key (z 1)) 
+                                 (+ x y z q)) 'a 'b))
+
+(f 1 2)
+(f 1 2 3)
+(f 1 2 3 #:z 4)
+(f 1 2 #:z 3)
+(test (f 1 2 'a))

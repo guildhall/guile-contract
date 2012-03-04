@@ -37,6 +37,7 @@
 (define impersonate-vector
   (lambda x
     (error "impersonator-vector is not implemented")))
+
 (define chaperone-vector
   (lambda x
     (error "chaperone-vector is not implemented")))
@@ -88,30 +89,33 @@
 
 
 
-(define (to-keys x ks)
-  (let loop ((ks ks) (x x) (r '()))
+(define (to-keys x vs)
+  (let loop ((vs vs) (x x) (r '()))
     (match x
       (((? keyword? k) v . l)
-       (loop l (cdr x) `(,k ,(car x) ,@r)))
+       (loop (cdr vs) l `(,k ,(car vs) ,@r)))
       ((               v . l)
-       (loop l (cdr x) `(,v          ,@r)))
+       (loop vs l r))
       (()
        r))))
 
 (define (match-wrap-res-keys proc n)
-  (lambda (x)
-    (case-lambda
-      ((ks)
-       (apply proc (to-keys x ks)))
-      ((f ks . l)
-       (if (procedure? f)
-           (if (eq? (length l) n)
-               (call-with-values
-                   (lambda () 
-                     (apply proc (append l (to-keys x ks))))
-                 f)
-               (apply proc ks (append l (to-keys x f))))
-           (apply proc ks (append l (to-keys x f))))))))
+  (let ((alt (match-wrap-res proc n)))
+    (lambda (x)
+      (if (ormap keyword? x)
+          (case-lambda
+            ((ks)
+             (apply proc (to-keys x ks)))
+            ((f ks . l)
+             (if (procedure? f)
+                 (if (eq? (length l) n)
+                     (call-with-values
+                         (lambda () 
+                           (apply proc (append l (to-keys x ks))))
+                       f)
+                     (apply proc ks (append l (to-keys x f))))
+                 (apply proc ks (append l (to-keys x f))))))
+          alt))))
 
         
 
@@ -120,9 +124,7 @@
   (when (and (procedure? proc) (procedure? wrapper-proc))
     (let* ((argdata   (procedure-arguments proc))
            (argdata-w (procedure-arguments wrapper-proc))
-           (keys      (cdr (assoc 'keyword argdata)))
-           (keys-w    (cdr (assoc 'keyword argdata-w)))
-           (keys-w    (put-proc-first keys keys-w))
+           (keys      (map car (cdr (assoc 'keyword argdata))))
            (rest      (assoc 'rest argdata))
            (rest-w    (assoc 'rest argdata-w))
            (opt       (assoc 'optional argdata))
