@@ -134,3 +134,11 @@
 (f 1 2 3 #:z 4)
 (f 1 2 #:z 3)
 (test (f 1 2 'a))
+
+(define f/c (->* (number? number?) (number? #:z number?) any))
+(define f (contract f/c (case-lambda* ((x) x) ((x y #:key (z 2)) x) ((x y z) x)) 'a 'b))
+
+(f 1 2 #:z 3)
+(test (f 1 2 #:z 'a))
+
+

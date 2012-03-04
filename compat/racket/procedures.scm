@@ -1,10 +1,13 @@
 (define-module (compat racket procedures)
   #:use-module (system base compile)
+  #:use-module (system vm program)
   #:use-module (ice-9 match)
   #:use-module (ice-9 session)
+  #:use-module (srfi srfi-11)
   #:use-module (compat racket struct)
   #:use-module (compat racket struct-def)
   #:use-module (compat racket misc)
+  #:use-module (compat racket misc2)
   #:export (impersonate-procedure
             chaperone-procedure
             impersonate-struct
@@ -74,18 +77,19 @@
               '())))))
          
 (define (match-wrap-res proc n)
-  (case-lambda
-    (() 
-     (proc))
+  (lambda (xin)
+    (case-lambda
+      (() 
+       (proc))
     
-    ((x . l)
-     (if (procedure? x)
-         (if (eq? (length l) n)
-             (call-with-values
-                 (lambda () (apply proc l))
-               x)
-             (apply proc x l))
-         (apply proc x l)))))
+      ((x . l)
+       (if (procedure? x)
+           (if (eq? (length l) (length xin))
+               (call-with-values
+                   (lambda () (apply proc l))
+                 x)
+               (apply proc x l))
+           (apply proc x l))))))
 
 
 
@@ -108,23 +112,30 @@
              (apply proc (to-keys x ks)))
             ((f ks . l)
              (if (procedure? f)
-                 (if (eq? (length l) n)
-                     (call-with-values
-                         (lambda () 
-                           (apply proc (append l (to-keys x ks))))
-                       f)
-                     (apply proc ks (append l (to-keys x f))))
+                 (let-values (((args keys)
+                               (let loop ((x x) (a '()) (ks '()))
+                                 (match x
+                                   (((keyword? k) v . l)
+                                    (loop l a `(,v ,k ,@ks)))
+                                   ((x . l)
+                                    (loop l (cons x a) ks))
+                                   (()
+                                    (values (reverse a) (reverse ks)))))))
+                   (call-with-values
+                       (lambda () 
+                         (apply proc (append l (to-keys keys ks))))
+                     f))
                  (apply proc ks (append l (to-keys x f))))))
-          alt))))
+          (alt x)))))
 
-        
 
 ;Todo allow for optional varibales
 (define (impersonate-procedure proc wrapper-proc . props)
   (when (and (procedure? proc) (procedure? wrapper-proc))
     (let* ((argdata   (procedure-arguments proc))
            (argdata-w (procedure-arguments wrapper-proc))
-           (keys      (map car (cdr (assoc 'keyword argdata))))
+           (keys      (let-values (((a b) (procedure-keywords proc)))
+                        b))
            (rest      (assoc 'rest argdata))
            (rest-w    (assoc 'rest argdata-w))
            (opt       (assoc 'optional argdata))
@@ -161,7 +172,7 @@
                  (lambda x
                    (call-with-values
                        (lambda () (apply wrapper-proc x))
-                     match-wrap))
+                     (match-wrap x)))
                      
                  (lambda x
                    (call-with-values
@@ -183,7 +194,22 @@
            res (car arity) (cadr arity) (caddr arity)))
         
         (set-procedure-property!
-         res 'arglist argdata)
+         res 'arglist 
+         (aif (it) (procedure-property proc 'arglist)
+              it
+              (let loop ((as argdata))
+                (match as
+                  ((('allow-other-keys? . f) . l)
+                   (cons f (loop l)))
+                  ((('rest . f) . l) 
+                   (cons f (loop l)))
+                  (() '())
+                  (((a . l) . u)
+                   (cons l (loop u)))))))
+                          
+
+        (set-procedure-property!
+         res 'arglists (procedure-argdata-list proc))
         
         res))))
         

@@ -9,6 +9,7 @@
   #:use-module (ice-9 session)
 
   #:use-module (compat racket misc)
+  #:use-module (compat racket misc2)
   #:use-module (compat racket lambda)
   #:use-module (compat racket procedures)
   #:use-module (compat racket struct)
@@ -27,8 +28,13 @@
             check-procedure
             check-procedure/more))
 
-
-(define-syntax λ
+(define (procedure-arity x)
+  (map
+   (lambda (x)
+     (make-arity-at-least (car x)))
+   (rprocedure-minimum-arity x)))
+     
+(define-syntax λ 
   (syntax-rules ()
     ((_ args code ...)
      (rlambda args code ...))))
@@ -204,13 +210,9 @@ v4 todo:
                                 contract-req-kwds contract-opt-kwds)
   (when (not (null? contract-req-kwds))
     (error "guile does not support required keywords"))
-  (and (equal? (procedure-minimum-arity val) contract-arity)
+  (and (equal? (procedure-arity val) contract-arity)
        (let ((va (sort 
-                  (map car (cdr (aif (it) (assoc 'keyword
-                                                 (procedure-arguments 
-                                                  val))
-                                     it (list 1))))
-                       
+                  (procedure-keywords val)
                   keyword<?)))         
          (equal? va contract-opt-kwds))))
 
@@ -2380,12 +2382,13 @@ v4 todo:
 ;; returns #t if val accepts dom-length arguments and
 ;; any number of arguments more than dom-length. 
 ;; returns #f otherwise.
-(define (procedure-accepts-and-more? val dom-length)
-  (let ([arity (procedure-minimum-arity val)])
+(define (procedure-accepts-and-more? val dom-length)  
+  (pk val)
+  (let ([arity (procedure-arity val)])
     (cond
       [(number? arity) #f]
       [(arity-at-least? arity)
-       (<= (arity-at-least-value arity) dom-length)]
+      (<= (arity-at-least-value arity) dom-length)]
       [else
        (let ([min-at-least 
               (let loop ([ars arity]
