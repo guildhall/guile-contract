@@ -1,10 +1,20 @@
 (define-module (compat racket misc2)
   #:use-module (system vm program)
   #:use-module (compat racket misc)
+  
+  #:use-module (ice-9 session)
+  
+  #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-11)
+
   #:export (define-syntaxes 
              procedure-argdata-list
-             rprocedure-minimum-arity))
+             rprocedure-minimum-arity
+             make-arity-at-least
+             arity-at-least
+             arity-at-least?
+             arity-at-least-value
+             procedure-arity))
 
 (define-syntax define-syntaxes
   (lambda (x)
@@ -50,4 +60,33 @@
            (list req opt rst)))
        (get-program-arguments f)))
 
+
+(define-record-type arity-at-least
+  (make-arity-at-least value)
+  arity-at-least?
+  (value  arity-at-least-value))
  
+
+(define (procedure-arity x)
+  (let* ((lis (rprocedure-minimum-arity x))
+         (inf (ormap (lambda (x) (caddr x)) lis)))
+    (if inf
+        (if (= (length lis) 1)
+            (make-arity-at-least (caar lis))
+            (map 
+             (lambda (x)
+               (if (caddr x)
+                   (make-arity-at-least (car x))
+                   (car x)))
+             (sort lis (lambda (x y)
+                         (cond ((caddr y) #t)
+                               ((caddr x) #f)
+                               (else 
+                                (< (car x) (car y))))))))
+        (if (= (length lis) 1)
+            (caar lis)
+            (let loop ((l lis) (m (caar lis)))
+              (if (pair? l)
+                  (loop (cdr l) (min m (caar l)))
+                  m))))))
+

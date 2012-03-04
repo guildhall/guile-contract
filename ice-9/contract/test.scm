@@ -97,7 +97,7 @@
 
 (define flat
   (flat-murec-contract ((plus  (cons/c (symbols '+) minus))
-                              (minus (cons/c (symbols '-) (or/c plus null?))))
+                        (minus (cons/c (symbols '-) (or/c plus null?))))
       (list/c plus minus)))
 
 (test (contract flat (list '(+ - + -) '(-)) 'a 'b))
@@ -135,10 +135,29 @@
 (f 1 2 #:z 3)
 (test (f 1 2 'a))
 
-(define f/c (->* (number? number?) (number? #:z number?) any))
-(define f (contract f/c (case-lambda* ((x) x) ((x y #:key (z 2)) x) ((x y z) x)) 'a 'b))
 
-(f 1 2 #:z 3)
-(test (f 1 2 #:z 'a))
+(define f2/c (->* (number? number?) (number? #:z number?) any))
+(define f2 (contract 
+            f2/c 
+            (case-lambda* ((x) x) ((x y #:key (z 2)) x) ((x y z) x)) 'a 'b))
 
+(f2 1 2 #:z 3)
+(test (f2 1 2 #:z 'a))
+
+
+(define f3/c (-> number? (-> number? number?)))
+(define f3 (contract f3/c (lambda (x) (lambda (y) (+ x y))) 'a 'b))
+
+((f3 1) 2)
+(test ((f3 1) 'a))
+
+(define f4/c (or/c (->* (number?) (number?) any) (-> number? any)))
+(test (contract f4/c (lambda (x) x) 'a 'b))
+
+(define f5/c (->* (number?) () #:rest (listof number?) number?))
+(define f5 (contract f5/c (lambda (x . l) (apply + x l)) 'a 'b))
+
+(f5 1)
+(f5 1 2 3)
+(test (f5 1 2 'a))
 

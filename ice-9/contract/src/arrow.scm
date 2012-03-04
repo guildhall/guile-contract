@@ -27,12 +27,6 @@
             procedure-accepts-and-more?
             check-procedure
             check-procedure/more))
-
-(define (procedure-arity x)
-  (map
-   (lambda (x)
-     (make-arity-at-least (car x)))
-   (rprocedure-minimum-arity x)))
      
 (define-syntax λ 
   (syntax-rules ()
@@ -2383,12 +2377,11 @@ v4 todo:
 ;; any number of arguments more than dom-length. 
 ;; returns #f otherwise.
 (define (procedure-accepts-and-more? val dom-length)  
-  (pk val)
   (let ([arity (procedure-arity val)])
     (cond
       [(number? arity) #f]
       [(arity-at-least? arity)
-      (<= (arity-at-least-value arity) dom-length)]
+       (<= (arity-at-least-value arity) dom-length)]
       [else
        (let ([min-at-least 
               (let loop ([ars arity]
