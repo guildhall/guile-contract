@@ -163,10 +163,10 @@
 
 
 (define f6/c (->i/m ((x number?)(y (x) (>=/c x))) (result (x y) (and/c number? (>=/c (+ x y))))))
-(define f6 (contract f/c (lambda (x y) (+ x y 1)) 'a 'b))
+(define f6 (contract f6/c (lambda (x y) (+ x y 1)) 'a 'b))
 
 (f6 1 2)
 (test (f6 2 1))
-(define f6b (contract f/c (lambda (x y) (- x y 1)) 'a 'b))
-(test (f6 1 2))
+(define f6b (contract f6/c (lambda (x y) (- x y 1)) 'a 'b))
+(test (f6b 1 2))
 

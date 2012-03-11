@@ -10,7 +10,6 @@
   #:export (define-syntaxes 
              procedure-argdata-list
              rprocedure-minimum-arity
-             make-arity-at-least
              procedure-arity))
 
 (define-syntax define-syntaxes
@@ -56,12 +55,6 @@
                         #t #f)))
            (list req opt rst)))
        (get-program-arguments f)))
-
-
-(define-record-type arity-at-least
-  (make-arity-at-least value)
-  arity-at-least?
-  (value  arity-at-least-value))
  
 
 (define (procedure-arity x)
