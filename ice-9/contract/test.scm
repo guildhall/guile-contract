@@ -162,7 +162,7 @@
 (test (f5 1 2 'a))
 
 
-(define f6/c (->i/m ((x number?)(y (x) (>=/c x))) (result (x y) (and/c number? (>=/c (+ x y))))))
+(define f6/c (->i ((x number?)(y (x) (>=/c x))) (result (x y) (and/c number? (>=/c (+ x y))))))
 (define f6 (contract f6/c (lambda (x y) (+ x y 1)) 'a 'b))
 
 (f6 1 2)
