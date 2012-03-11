@@ -11,9 +11,6 @@
              procedure-argdata-list
              rprocedure-minimum-arity
              make-arity-at-least
-             arity-at-least
-             arity-at-least?
-             arity-at-least-value
              procedure-arity))
 
 (define-syntax define-syntaxes

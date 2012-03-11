@@ -145,10 +145,10 @@
      (syntax-property
       (syntax vectorof)
       'racket/contract:contract
-      (vector (gensym 'ctc) (list #'x) null))]
+      (vector (gensym "ctc") (list #'x) null))]
     [(vecof arg ...)
      (let ([args (syntax->list #'(arg ...))]
-           [this-one (gensym 'vectorof-ctc)])
+           [this-one (gensym "vectorof-ctc")])
        (with-syntax ([(new-arg ...) (convert-args args this-one)])
          (syntax-property
           (syntax
@@ -288,10 +288,10 @@
      (syntax-property
       (syntax vector/c)
       'racket/contract:contract
-      (vector (gensym 'ctc) (list #'x) null))]
+      (vector (gensym "ctc") (list #'x) null))]
     [(vec/c arg ...)
      (let ([args (syntax->list #'(arg ...))]
-           [this-one (gensym 'vector/c-ctc)])
+           [this-one (gensym "vector/c-ctc")])
        (with-syntax ([(new-arg ...) (convert-args args this-one)])
          (syntax-property
           (syntax

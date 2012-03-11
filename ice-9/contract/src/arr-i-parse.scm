@@ -53,7 +53,7 @@ code does the parsing and validation of the syntax.
                                         id/rest-id pre-cond range post-cond)
                     (pull-out-pieces stx)])
         (let ([candidate
-               (istx (append (parse-doms stx #f raw-mandatory-doms)
+               (make istx (append (parse-doms stx #f raw-mandatory-doms)
                              (parse-doms stx #t raw-optional-doms))
                      id/rest-id
                      pre-cond
@@ -238,25 +238,27 @@ code does the parsing and validation of the syntax.
        (keyword? (syntax-e #'kwd))
        (begin
          (check-id stx #'id)
-         (cons (arg #'id #f #'ctc-expr #'kwd optional?)
+         (cons (make arg #'id #f #'ctc-expr #'kwd optional?)
                (loop #'rest)))]
       [(kwd [id (id2 ...) ctc-expr] . rest)
        (keyword? (syntax-e #'kwd))
        (begin
          (check-id stx #'id)
          (for-each (λ (x) (check-id stx x)) (syntax->list #'(id2 ...)))
-         (cons (arg #'id (syntax->list #'(id2 ...)) #'ctc-expr #'kwd optional?)
+         (cons (make arg #'id (syntax->list #'(id2 ...)) #'ctc-expr 
+                     #'kwd optional?)
                (loop #'rest)))]
       [([id ctc-expr] . rest)
        (begin
          (check-id stx #'id)
-         (cons (arg #'id #f #'ctc-expr #f optional?)
+         (cons (make arg #'id #f #'ctc-expr #f optional?)
                (loop #'rest)))]
       [([id (id2 ...) ctc-expr] . rest)
        (begin
          (check-id stx #'id)
          (for-each (λ (x) (check-id stx x)) (syntax->list #'(id2 ...)))
-         (cons (arg #'id (syntax->list #'(id2 ...)) #'ctc-expr #f optional?)
+         (cons (make arg #'id (syntax->list #'(id2 ...)) #'ctc-expr #f 
+                     optional?)
                (loop #'rest)))]
       [() '()]
       [(a . rest)
@@ -272,17 +274,17 @@ code does the parsing and validation of the syntax.
             (begin
               (check-id stx #'id)
               (if (free-identifier=? #'_ #'id) 
-                  (eres #'id #f #'ctc (car (generate-temporaries '(eres))))
-                  (lres #'id #f #'ctc)))]
+                  (make-eres #'id #f #'ctc (car (generate-temporaries '(eres))))
+                  (make-lres #'id #f #'ctc)))]
 
            [[id (id2 ...) ctc]
             (begin
               (check-id stx #'id)
               (for-each (λ (x) (check-id stx x)) (syntax->list #'(id2 ...)))
               (if (free-identifier=? #'_ #'id) 
-                  (eres #'id (syntax->list #'(id2 ...)) #'ctc 
+                  (make-eres #'id (syntax->list #'(id2 ...)) #'ctc 
                         (car (generate-temporaries '(eres))))
-                  (lres #'id (syntax->list #'(id2 ...)) #'ctc)))]
+                  (make-lres #'id (syntax->list #'(id2 ...)) #'ctc)))]
 
            [(a ...)
             (let ([len (length (syntax->list #'(a ...)))])
@@ -303,24 +305,24 @@ code does the parsing and validation of the syntax.
     [any #f]
 
     [[_ ctc]
-     (list (eres #'id #f #'ctc (car (generate-temporaries '(eres)))))]
+     (list (make-eres #'id #f #'ctc (car (generate-temporaries '(eres)))))]
 
     [[id ctc]
      (begin
        (check-id stx #'id)
-       (list (lres #'id #f #'ctc)))]
+       (list (make-lres #'id #f #'ctc)))]
 
     [[_ (id2 ...) ctc] 
      (begin
        (for-each (λ (x) (check-id stx x)) (syntax->list #'(id2 ...)))
-       (list (eres #'id (syntax->list #'(id2 ...)) #'ctc 
+       (list (make-eres #'id (syntax->list #'(id2 ...)) #'ctc 
                    (car (generate-temporaries '(eres))))))]
 
     [[id (id2 ...) ctc] 
      (begin
        (check-id stx #'id)
        (for-each (λ (x) (check-id stx x)) (syntax->list #'(id2 ...)))
-       (list (lres #'id (syntax->list #'(id2 ...)) #'ctc)))]
+       (list (make-lres #'id (syntax->list #'(id2 ...)) #'ctc)))]
 
     [x (raise-syntax-error #f "expected the range portion" stx #'x)]))
 
@@ -364,7 +366,7 @@ code does the parsing and validation of the syntax.
                    [(#:rest [id rest-expr] . leftover)
                     (begin
                       (check-id stx #'id)
-                      (values (arg/res #'id #f #'rest-expr)
+                      (values (make arg/res #'id #f #'rest-expr)
                               #'leftover))]
 
                    [(#:rest [id (id2 ...) rest-expr] . leftover)
@@ -372,7 +374,7 @@ code does the parsing and validation of the syntax.
                       (check-id stx #'id)
                       (for-each (λ (x) (check-id stx x))
                                 (syntax->list #'(id2 ...)))
-                      (values (arg/res #'id 
+                      (values (make arg/res #'id 
                                        (syntax->list #'(id2 ...))
                                        #'rest-expr)
                               #'leftover))]
@@ -401,7 +403,7 @@ code does the parsing and validation of the syntax.
                         [x (void)])
                       (for-each (λ (x) (check-id stx x)) 
                                 (syntax->list #'(id ...)))
-                      (values (pre/post (syntax->list #'(id ...)) #'pre-cond) 
+                      (values (make pre/post (syntax->list #'(id ...)) #'pre-cond) 
                               #'pre-leftover))]
                    [_ (values #f leftover)])]
 
@@ -429,7 +431,8 @@ code does the parsing and validation of the syntax.
                               #f "cannot have a #:post with any as the range" 
                               stx #'post-cond)]
                         [_ (void)])
-                      (values (pre/post (syntax->list #'(id ...)) #'post-cond) 
+                      (values (make pre/post (syntax->list #'(id ...)) 
+                                    #'post-cond) 
                               #'leftover))]
 
                    [(#:post a b . stuff)

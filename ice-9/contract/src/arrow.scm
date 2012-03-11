@@ -16,7 +16,8 @@
   #:use-module (compat racket struct-def)
   #:use-module (srfi srfi-11)
 
-  #:export (->
+  #:export (%f
+            ->
             ->*
             ->d
             case->
@@ -1518,7 +1519,7 @@ v4 todo:
                (make-this-parameters 
                 (if (syntax? (syntax-parameter-value 
                               #'making-a-method %f))
-                    (car (generate-temporaries '(this)))
+                    (car (generate-temporaries #'(this)))
                     (datum->syntax stx 'this)))])
            (with-syntax 
                ([(dom-params ...)

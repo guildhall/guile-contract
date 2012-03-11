@@ -9,6 +9,7 @@
   #:use-module (compat racket for)
   #:use-module (compat racket misc)
   #:use-module (compat racket struct)
+  #:use-module (compat racket procedures)
   #:use-module (compat racket boundmap)
   
   #:use-module (srfi srfi-1)
@@ -28,6 +29,14 @@
 ;; here : quoted-spec for use in assigning indy blame
 ;; mk-wrapper : creates the a wrapper function that 
 ;;              implements the contract checking
+
+(define qstx 1)
+(define (id x) x)
+
+(define (my-datum->syntax stx l)
+  (datum->syntax 
+   stx
+   (map (lambda (x) `(quote ,x)) l)))
 
 (define-rstruct ->i (arg-ctcs arg-dep-ctcs indy-arg-ctcs
                               rng-ctcs rng-dep-ctcs indy-rng-ctcs
@@ -136,9 +145,9 @@
                     [rng-info  (vector-ref name-info 3)]
                     [post-info (vector-ref name-info 4)])
                `(->i ,(arg/ress->spec args-info
-                                      (->i-arg-ctcs ctc)
-                                      (->i-arg-dep-ctcs ctc)
-                                      (λ (x) (list-ref x 4)))
+                                           (->i-arg-ctcs ctc)
+                                           (->i-arg-dep-ctcs ctc)
+                                           (λ (x) (list-ref x 4)))
 
                      ,@(let ([rests (arg/ress->spec 
                                      args-info
@@ -643,7 +652,7 @@
                  [(free-identifier=? var arg) iarg]
                  [else (loop (cdr iargs) (cdr args))]))])))
         
-        (define this-param (and (syntax-parameter-value #'making-a-method)
+        (define this-param (and (syntax-parameter-value #'making-a-method %f)
                                 (car (generate-temporaries '(this)))))
         
         #`(λ (blame swapped-blame indy-dom-blame indy-rng-blame chk ctc
@@ -702,7 +711,7 @@
 
 
              (λ (val)
-                (chk val #,(and (syntax-parameter-value #'making-a-method) #t))
+                (chk val #,(and (syntax-parameter-value #'making-a-method %f) #t))
                 (let ([arg-checker
                        (λ #,(args/vars->arglist an-istx wrapper-args this-param)
                           #,(add-wrapper-let 
@@ -785,7 +794,7 @@
                                  (if (istx-rst an-istx)
                                      (list (istx-rst an-istx))
                                      '()))]
-         [this->i        (gensym 'this->i)])
+         [this->i        (gensym "this->i")])
     (with-syntax 
         ([(arg-exp-xs ...) 
           (generate-temporaries (filter 
@@ -804,7 +813,7 @@
                           'racket/contract:negative-position
                           this->i)
                          'racket/contract:contract-on-boundary 
-                         (gensym '->i-indy-boundary))))
+                         (gensym "->i-indy-boundary"))))
                 args+rst))]
                   
          [(res-exp-xs ...) 
@@ -830,14 +839,13 @@
                               'racket/contract:positive-position
                               this->i)
                              'racket/contract:contract-on-boundary 
-                             (gensym '->i-indy-boundary))))
+                             (gensym "->i-indy-boundary"))))
                     (istx-ress an-istx)))
               '())])
-      
       #`(let ([arg-exp-xs arg-exps] ...
               [res-exp-xs res-exps] ...)
           #,(syntax-property
-             #`(->i 
+             #`(make ->i 
                 ;; all of the non-dependent argument contracts
                 (list arg-exp-xs ...)
                 ;; all of the dependent argument contracts
@@ -858,7 +866,7 @@
                                         'racket/contract:negative-position 
                                         this->i)
                                        'racket/contract:contract-on-boundary 
-                                       (gensym '->i-indy-boundary)) 
+                                       (gensym "->i-indy-boundary")) 
                                     val blame))))
                       args+rst)))
                 ;; then the non-dependent argument contracts that are 
@@ -895,7 +903,7 @@
                                           'racket/contract:positive-position
                                                          this->i)
                                           'racket/contract:contract-on-boundary 
-                                          (gensym '->i-indy-boundary))))
+                                          (gensym "->i-indy-boundary"))))
                                               #`(λ (#,@(arg/res-vars arg) 
                                                     val blame)
      ;; this used to use opt/direct, but opt/direct duplicates code (bad!)
@@ -906,7 +914,7 @@
                                           'racket/contract:positive-position
                                                         this->i)
                                           'racket/contract:contract-on-boundary 
-                                          (gensym '->i-indy-boundary))
+                                          (gensym "->i-indy-boundary"))
                                                     val blame)))))
                                   (istx-ress an-istx))))
                       #''())
@@ -978,24 +986,28 @@
 
                 #,(and (istx-rst an-istx) #t)
 
-                #,(and (syntax-parameter-value #'making-a-method) #t)
+                #,(and (syntax-parameter-value #'making-a-method %f) #t)
 
                 (quote-module-path)
 
                 #,wrapper-func
 
-                '#(#,(for/list 
-                      ([an-arg (in-list (istx-args an-istx))])
-                      `(,(if (arg/res-vars an-arg) 'dep 'nodep)
-                        ,(syntax-e (arg/res-var an-arg)) 
-                        ,(if (arg/res-vars an-arg)
-                             (map syntax-e (arg/res-vars an-arg))
-                             '())
-                        ,(and (arg-kwd an-arg)
-                              (syntax-e (arg-kwd an-arg)))
-                        ,(arg-optional? an-arg)))
+                (vector 
+                 #,@(pku 
+                     (id (my-datum->syntax #'qstx
+                  (list
+                      (for/list 
+                       ([an-arg (in-list (istx-args an-istx))])
+                       `(,(if (arg/res-vars an-arg) 'dep 'nodep)
+                         ,(syntax-e (arg/res-var an-arg)) 
+                         ,(if (arg/res-vars an-arg)
+                              (map syntax-e (arg/res-vars an-arg))
+                              '())
+                         ,(and (arg-kwd an-arg)
+                               (syntax-e (arg-kwd an-arg)))
+                         ,(arg-optional? an-arg)))
 
-                   #,(if (istx-rst an-istx)
+                     (if (istx-rst an-istx)
                          (if (arg/res-vars (istx-rst an-istx))
                              `(dep 
                                ,(syntax-e (arg/res-var (istx-rst an-istx)))
@@ -1005,10 +1017,10 @@
                                                  (istx-rst an-istx)))))
                          #f)
 
-                   #,(and (istx-pre an-istx) 
+                     (and (istx-pre an-istx) 
                           (map syntax-e (pre/post-vars (istx-pre an-istx))))
 
-                   #,(and (istx-ress an-istx)
+                     (and (istx-ress an-istx)
                           (for/list 
                            ([a-res (in-list (istx-ress an-istx))])
                            `(,(if (arg/res-vars a-res) 'dep 'nodep)
@@ -1020,8 +1032,9 @@
                                   '())
                              #f
                              #f)))
-                   #,(and (istx-post an-istx) 
-                          (map syntax-e (pre/post-vars (istx-post an-istx))))))
+                     (and (istx-post an-istx) 
+                          (map syntax-e (pre/post-vars 
+                                         (istx-post an-istx))))))))))
 
              'racket/contract:contract 
 
@@ -1039,6 +1052,6 @@
                        (if post (cons post orig) orig)
                        (if pre (list pre) '())))))))))
 
-(define-syntax ->i
+#;(define-syntax ->i
   (syntax-rules ()
     ((_ . l) (->i/m . l))))

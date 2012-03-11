@@ -850,7 +850,8 @@
                   [ex-id (or reflect-id id)]
                   [ctrct (syntax-property ctrct/no-prop
                                           'racket/contract:contract-on-boundary
-                                          (gensym 'provide/contract-boundary))])
+                                          (gensym 
+                                           "provide/contract-boundary"))])
               (with-syntax ([id-rename ((if mangle-for-maker? 
                                             a:mangle-id-for-maker
                                             a:mangle-id)

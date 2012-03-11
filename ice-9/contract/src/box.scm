@@ -116,10 +116,10 @@
      (syntax-property
       (syntax box/c)
       'racket/contract:contract
-      (vector (gensym 'ctc) (list #'x) null))]
+      (vector (gensym "ctc") (list #'x) null))]
     [(b/c arg ...)
      (let ([args (syntax->list #'(arg ...))]
-           [this-one (gensym 'ctc)])
+           [this-one (gensym "ctc")])
        (define (convert-args args)
          (let loop ([args args]
                     [new-args null])

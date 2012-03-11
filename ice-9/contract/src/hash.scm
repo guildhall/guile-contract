@@ -24,10 +24,10 @@
      (syntax-property
       (syntax hash/c)
       'racket/contract:contract
-      (vector (gensym 'ctc) (list stx) null))]
+      (vector (gensym "ctc") (list stx) null))]
     [(h/c arg ...)
      (let ([args (syntax->list #'(arg ...))]
-           [this-one (gensym 'ctc)])
+           [this-one (gensym "ctc")])
        (define (convert-args args)
          (let loop ([args args]
                     [new-args null]

@@ -44,20 +44,22 @@
   (lambda (stx)
     (syntax-parse stx
       ((_ ((recv:id reci:gen) ...) code ...)
-       #'(let loop ((recv reci.init) ...)
-           (if (and (reci.pair? recv) ...)
-               (let ((recv (reci.car recv)) ...)
-                 code ... 
-                 (loop (reci.cdr recv) ...))))))))
+       (with-syntax (((li ...) (generate-temporaries #'(recv ...))))
+         #'(let loop ((li reci.init) ...)
+             (if (and (reci.pair? li) ...)
+                 (let ((recv (reci.car li)) ...)
+                   code ... 
+                   (loop (reci.cdr li) ...)))))))))
 
 (define-syntax for/list
   (lambda (stx)
     (syntax-parse stx
       ((_ ((recv:id reci:gen) ...) code ...)
-       #'(let loop ((recv reci.init) ...)
-           (if (and (reci.pair? recv) ...)
-               (cons
-                (let ((recv (reci.car recv)) ...)
-                  code ...)
-                (loop (reci.cdr recv) ...))
-               '()))))))
+       (with-syntax (((li ...) (generate-temporaries #'(recv ...))))
+         #'(let loop ((li reci.init) ...)
+             (if (and (reci.pair? li) ...)
+                 (cons
+                  (let ((recv (reci.car li)) ...)
+                    code ...)
+                  (loop (reci.cdr li) ...))
+                 '())))))))
