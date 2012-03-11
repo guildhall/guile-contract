@@ -1,5 +1,5 @@
 (define-module (ice-9 contract)
-  #:use-module (ice-9 contract exists)
+  #:use-module (ice-9 contract parametric)
   #:use-module (ice-9 contract regions)
   #:use-module (ice-9 contract src basic-opters)
   #:use-module (ice-9 contract base)
@@ -7,8 +7,8 @@
   #:use-module (compat racket misc))
 
 (re-export-all (ice-9 contract base   ))
-(re-export-all (ice-9 contract exists ) #:except (∀∃?))
 (re-export-all (ice-9 contract regions))
+(re-export-all (ice-9 contract parametric))
 
 #|
 #lang scheme/base

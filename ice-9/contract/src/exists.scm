@@ -1,4 +1,4 @@
-(define-module (ice-9 contract exists)
+(define-module (ice-9 contract src exists)
   #:use-module (ice-9 contract src guts)
 
   #:use-module (compat racket misc)
@@ -48,6 +48,6 @@
 (define (mk raw-name neg?)
   (define name (string->symbol (format #f "~a/~a" raw-name (if neg? "∃" "∀"))))
   (define-values (struct-type constructor predicate accessor mutator)
-    (make-struct-type name struct:∀∃ 1 0))
+    (make-struct-type name ∀∃ 1 0))
   (make-∀∃/c constructor (λ (x) (accessor x 0)) predicate raw-name neg?))
 

@@ -170,3 +170,9 @@
 (define f6b (contract f6/c (lambda (x y) (- x y 1)) 'a 'b))
 (test (f6b 1 2))
 
+
+(define/contract (check x y)
+  (parametric->/c [X] (-> boolean? X  X))
+  (if (or (not x) (equal? y 'surprise))
+      'invalid
+      y))

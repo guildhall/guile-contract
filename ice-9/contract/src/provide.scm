@@ -1,7 +1,7 @@
 (define-module (ice-9 contract src provide)
   #:use-module (ice-9 contract src arrow)
   #:use-module (ice-9 contract src base)
-  #:use-module (ice-9 contract exists)
+  #:use-module (ice-9 contract src exists)
   #:use-module (ice-9 contract src guts)
 
   #:use-module (compat racket misc)
