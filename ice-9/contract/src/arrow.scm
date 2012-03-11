@@ -28,6 +28,12 @@
             procedure-accepts-and-more?
             check-procedure
             check-procedure/more))
+
+(define-syntax syntax-parameter-value-w 
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ f)
+       (syntax-parameter-value #'f)))))
      
 (define-syntax λ 
   (syntax-rules ()
@@ -1355,7 +1361,7 @@ v4 todo:
 ;; parses everything after the mandatory and optional doms in a ->d contract
 (define (parse-leftover->d stx leftover)
   (let*-values ([(raw-optional-doms leftover)
-                 (syntax-case leftover ()
+                 (syntax-case leftover ()                   
                    [(kwd . leftover2)
                     (keyword? (syntax-e #'kwd))
                     (values '() leftover)]
@@ -1574,8 +1580,8 @@ v4 todo:
                      (raise-syntax-error #f "duplicate identifier" stx dup))
                    #`(let-syntax ([parameterize-this
                                  (let ([old-param 
-                                        (syntax-parameter-value 
-                                         #'making-a-method)])
+                                        (syntax-parameter-value-w 
+                                         making-a-method)])
 
                                    (λ (stx)
                                       (syntax-case stx ()
@@ -1583,14 +1589,14 @@ v4 todo:
                                         [(_ id body)
                                          (if (syntax? old-param)
                                              (with-syntax ([param old-param])
-                                               (syntax/loc stx
+                                               (syntax
                                                  (fluid-let-syntax
                                                   ([param 
                                                     (make-this-transformer 
                                                      #'id)])
                                                   body)))
                                              #'body)])))])
-                     (fluid-let-syntax
+                    (fluid-let-syntax
                       ((making-a-method #,#'%f)) 
                       (build-->d 
                        mtd? 
