@@ -1,4 +1,29 @@
 This is a draft of the ported code for guile-2.0.5
 and later
 
-guile-contract had guile-syntax-parse as a dependency
+guile-contract has guile-syntax-parse as a dependency
+
+for documentation refer to racket's documentation at
+  http://docs.racket-lang.org/reference/contracts.html
+
+There will be differences. To note:
+
+* basic atomic variables and function contracts is working mostly as
+in the racket codebase. 
+
+* Structs and arrays and boxes is currently not ported in any way.
+
+* contract-out does only support renaming and simple attaching of contract
+  e.g. no struct an exists are available also please note
+
+** use (contract-out-spec name arg ...) as with a simplified contract-out
+   this form is evaluated and all contracts is evaluated as well
+
+** in the end of the program when all symbols have been maped issue 
+   (contract-out name)
+   typically at the end of the module, and the system will make the interface 
+   out in such a way that calling the functions from the outside, the contracts
+   will be used. But the functions inside the module with use the fast and 
+   plain form. E.g. we will move the variable to a new symbol and then add 
+   another binding in it's place that attaches the contract.
+

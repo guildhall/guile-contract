@@ -7,7 +7,7 @@
   #:use-module (ice-9 contract src vector)
   #:use-module (ice-9 contract src struct)
   #:use-module (ice-9 contract src misc)
-  #:use-module (ice-9 contract src provide)
+  #:use-module (ice-9 contract src out)
   #:use-module (ice-9 contract src guts)
   #:use-module (ice-9 contract src legacy)
   #:use-module (ice-9 contract src ds)
@@ -33,7 +33,7 @@
 (re-export-all (ice-9 contract src misc)
                #:except (check-between/c
                          check-unary-between/c))
-(re-export-all (ice-9 contract src provide))
+(re-export-all (ice-9 contract src out))
 (re-export-all (ice-9 contract src base))
 (re-export-all (ice-9 contract src legacy))
 (re-export-all (ice-9 contract src guts)
