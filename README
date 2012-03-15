@@ -1,4 +1,4 @@
-This is a draft of the ported code for guile-2.0.5
+This is a draft of the ported code for guile-2.0.6
 and later
 
 guile-contract has guile-syntax-parse as a dependency
