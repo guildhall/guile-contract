@@ -23,7 +23,7 @@ in the racket codebase.
    (contract-out name)
    typically at the end of the module, and the system will make the interface 
    out in such a way that calling the functions from the outside, the contracts
-   will be used. But the functions inside the module with use the fast and 
+   will be used. But the functions inside the module will use the fast and 
    plain form. E.g. we will move the variable to a new symbol and then add 
    another binding in it's place that attaches the contract.
 
