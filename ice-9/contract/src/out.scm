@@ -2,7 +2,35 @@
   #:use-module (syntax parse)
   #:use-module (ice-9 match)
   #:use-module (ice-9 contract src base)
+  #:use-module (ice-9 contract src arrow)
+  #:use-module (compat racket misc)
   #:export (contract-out contract-out-spec))
+
+(define-syntax-class strct
+  (pattern ((~datum struct) nm:id (f:id cnt:expr) ...)
+           #:with (ids ...) 
+           (with-syntax ((s? (datum->syntax 
+                              #'nm
+                              (string->symbol
+                               (string-append
+                                (symbol->string
+                                 (syntax->datum #'nm))
+                                "?"))))
+                         
+                         ((nf ...) (map (lambda (f)
+                                          (datum->syntax 
+                                           #'nm
+                                           (string->symbol
+                                            (string-append
+                                             (symbol->string
+                                              (syntax->datum #'nm))
+                                             "-"
+                                             (symbol->string
+                                              (syntax->datum f))))))
+                                        (stx->list #'(f ...)))))
+
+             #'((list 'nf (-> s? cnt)) ...))))
+
 
 (define-syntax-class def
   (pattern (n:id contract:expr)
@@ -13,7 +41,7 @@
            #:with (ids ...) #'((list 'm 'n contract))))
 
 (define-syntax-class pc
-  (pattern (~or x:def x:ren)
+  (pattern (~or x:strct x:def x:ren)
            #:with (ids ...) #'(x.ids ...)))
 
 (define-syntax contract-out-spec

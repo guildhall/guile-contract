@@ -27,3 +27,4 @@ in the racket codebase.
    plain form. E.g. we will move the variable to a new symbol and then add 
    another binding in it's place that attaches the contract.
 
+** in with-contract, we cannot define contracted variables, use set! instead
