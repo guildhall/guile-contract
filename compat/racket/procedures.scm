@@ -8,6 +8,7 @@
   #:use-module (compat racket struct-def)
   #:use-module (compat racket misc)
   #:use-module (compat racket misc2)
+  #:use-module ((compat racket vector) #:select (vector->rvector))
   #:export (impersonate-procedure
             chaperone-procedure
             impersonate-struct
@@ -24,6 +25,8 @@
             
             chaperone-of?))
 
+
+
 (define old-assoc assoc)
 (define (assoc k x)
   (if x
@@ -36,14 +39,6 @@
 (define chaperone-struct
   (lambda x
     (error "chaperone-struct is not implemented")))
-
-(define impersonate-vector
-  (lambda x
-    (error "impersonator-vector is not implemented")))
-
-(define chaperone-vector
-  (lambda x
-    (error "chaperone-vector is not implemented")))
 
 (define impersonate-box
   (lambda x
@@ -62,6 +57,27 @@
 (define env (current-module))
 
 (define novalue (gensym "not-defined"))
+
+
+(define (impersonate-vector vec ref-proc set-proc . props)
+  (let* ((f-ref (lambda (vec i)
+                  (ref-proc vec i (vector-ref vec i))))
+         (f-set (lambda (vec i v)
+                  (vector-set! vec i (set-proc vec i v))))
+         (vec   (vector->rvector f-ref f-set vec)))
+
+    (let loop ((props props))
+      (match props
+        ((prop val . l)
+         ((struct-type-property-attach prop) vec val '())
+         (loop l))
+        (() 'ok)))
+
+    vec))
+
+
+(define chaperone-vector impersonate-vector)    
+
 
 (define (put-proc-first i ii)
   (let loop ((i i))
